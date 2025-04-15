@@ -38,10 +38,10 @@ class Client(commands.Bot):
     try:
       if message.channel.parent_id:
         if message.channel.parent_id == config.COMMUNITY_SUPPORT_FORUM.id:
-          if re.search("it (works|worked)|thank you|ty|tysm|works now|solved", message.content.lower()):
+          if re.search("(it (works|worked))|thank you|ty|tysm|works now|solved", message.content.lower()):
             await message.reply("-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:1361745562063605781>")
         if message.channel.parent_id == config.FIND_A_PROJECT_FORUM.id:
-          if re.search("(yes|yup) thanks|thank you|ty|tysm|found it|solved", message.content.lower()):
+          if re.search("((yes|yup) thanks)|thank you|ty|tysm|found it|solved", message.content.lower()):
             await message.reply("-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:1361745562063605781>")
     except AttributeError:
       pass
