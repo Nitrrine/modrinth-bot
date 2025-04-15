@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = getenv("BOT_TOKEN")
-ACTIVE_ROLE_ID = discord.Object(id=getenv("ACTIVE_ROLE_ID"))
-MODERATOR_ROLE_ID = discord.Object(id=getenv("MODERATOR_ROLE_ID"))
-GUILD_ID = discord.Object(id=getenv("GUILD_ID"))
+ACTIVE_ROLE = discord.Object(id=getenv("ACTIVE_ROLE"))
+MODERATOR_ROLE = discord.Object(id=getenv("MODERATOR_ROLE"))
+COMMUNITY_SUPPORT_FORUM = discord.Object(id=getenv("COMMUNITY_SUPPORT_FORUM"))
+COMMUNITY_SUPPORT_FORUM_SOLVED_TAG = discord.Object(id=getenv("COMMUNITY_SUPPORT_FORUM_SOLVED_TAG"))
+FIND_A_PROJECT_FORUM = discord.Object(id=getenv("FIND_A_PROJECT_FORUM"))
+FIND_A_PROJECT_FORUM_SOLVED_TAG = discord.Object(id=getenv("FIND_A_PROJECT_FORUM_SOLVED_TAG"))
+GUILD = discord.Object(id=getenv("GUILD"))

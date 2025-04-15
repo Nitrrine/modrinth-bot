@@ -1,17 +1,17 @@
-import discord, logging, config
+import discord, logging, config, re
 from discord.ext import commands
-from discord import app_commands
 
 logger = logging.getLogger("discord")
 logger.setLevel(logging.DEBUG)
 logging.getLogger('discord.http').setLevel(logging.INFO)
+
 
 class Client(commands.Bot):
   async def on_ready(self):
     logger.info(f"Logged on as {self.user}!")
 
     try:
-      synced = await self.tree.sync(guild=config.GUILD_ID)
+      synced = await self.tree.sync(guild=config.GUILD)
       logger.info(f"Synced {len(synced)} commands.")
     except Exception as e:
       logger.error(f"Error syncing commands: {e}")
@@ -20,17 +20,42 @@ class Client(commands.Bot):
     if message.author == self.user:
       return
     
-    if message.content.lower().startswith("hello"):
-      await message.reply(f"Hi there, {message.author.mention}!");
-
+    try:
+      if message.channel.parent_id:
+        if message.channel.parent_id == config.COMMUNITY_SUPPORT_FORUM.id:
+          if re.search("it (works|worked)|thank you|ty|tysm|works now|solved", message.content.lower()):
+            await message.reply("-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:1361745562063605781>")
+        if message.channel.parent_id == config.FIND_A_PROJECT_FORUM.id:
+          if re.search("(yes|yup) thanks|thank you|ty|tysm|found it|solved", message.content.lower()):
+            await message.reply("-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:1361745562063605781>")
+    except AttributeError:
+      pass
+      
+      
 intents = discord.Intents.default()
 intents.message_content = True
 
 client = Client(command_prefix="!", intents=intents)
 
 
-@client.tree.command(name="ping", description="Responds with \"Pong\".", guild=config.GUILD_ID)
-async def cmdPing(interaction: discord.Interaction):
-  await interaction.response.send_message("Pong!")
+@client.tree.command(name="info", description="Information about the bot.", guild=config.GUILD)
+async def cmdInfo(interaction: discord.Interaction):
+  await interaction.response.send_message("Hello! I'm here to-")
+
+@client.tree.command(name="solved", description="Close current thread and mark it as solved.", guild=config.GUILD)
+async def cmdSolved(interaction: discord.Interaction):
+  if interaction.channel.parent_id:
+    if interaction.channel.parent_id == config.COMMUNITY_SUPPORT_FORUM.id:
+      if interaction.channel.owner_id == interaction.user.id:
+        await interaction.response.send_message("Marked this thread as solved and closed!")
+        await interaction.channel.add_tags(config.COMMUNITY_SUPPORT_FORUM_SOLVED_TAG)
+        await interaction.channel.edit(archived=True)
+
+    if interaction.channel.parent_id == config.FIND_A_PROJECT_FORUM.id:
+      if interaction.channel.owner_id == interaction.user.id:
+        await interaction.response.send_message("Marked this thread as found and closed!")
+        await interaction.channel.add_tags(config.FIND_A_PROJECT_FORUM_SOLVED_TAG)
+        await interaction.channel.edit(archived=True)
+
 
 client.run(config.BOT_TOKEN)
