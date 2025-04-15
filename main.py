@@ -6,6 +6,13 @@ logger.setLevel(logging.DEBUG)
 logging.getLogger('discord.http').setLevel(logging.INFO)
 
 
+blacklisted_file_extensions = ["asp", "aspx", "aspx-exe", "dll", "elf", "elf-so", "exe", "exe-only", 
+  "exe-service", "exe-small", "hta-psh", "loop-vbs", "macho", "msi", 
+  "msi-nouac", "osx-app", "psh", "psh-net", "psh-reflection", "psh-cmd", 
+  "vba", "vba-exe", "vba-psh", "vbs", "war", "ps1", "bat", "sh", "rar", "zip", "7z", "tar", "gz", "iso"
+]
+
+
 class Client(commands.Bot):
   async def on_ready(self):
     logger.info(f"Logged on as {self.user}!")
@@ -20,6 +27,14 @@ class Client(commands.Bot):
     if message.author == self.user:
       return
     
+    # Checks if user sent blacklisted file type
+    if message.attachments:
+      for attachment in message.attachments:
+        if any(attachment.filename.lower().endswith(ext) for ext in blacklisted_file_extensions):
+          await client.get_channel(config.ALERT_CHANNEL.id).send(f"User {message.author.mention} (`{message.author.name}`, ID: {message.author.id}) attempted to sent a blacklisted file type in {message.channel.mention}.\n> Filename: `{attachment.filename}`\n> URL: {attachment.url}")
+          await message.delete()
+    
+    # Regex triggers to suggest users to mark their thread's solved
     try:
       if message.channel.parent_id:
         if message.channel.parent_id == config.COMMUNITY_SUPPORT_FORUM.id:
@@ -30,8 +45,8 @@ class Client(commands.Bot):
             await message.reply("-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:1361745562063605781>")
     except AttributeError:
       pass
-      
-      
+
+
 intents = discord.Intents.default()
 intents.message_content = True
 
