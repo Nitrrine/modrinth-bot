@@ -57,6 +57,12 @@ class Client(commands.Bot):
     except Exception as e:
       logger.error(f"Error syncing commands: {e}")
 
+  async def on_thread_create(self, thread: discord.Thread):
+    if thread.parent_id == config.COMMUNITY_SUPPORT_FORUM.id:
+      embed = discord.Embed(description="**👋 Hello! Thank you for creating a new thread on Modrinth server**\n\n📃 Something went wrong with the game? Make sure to provide logs using <https://mclo.gs>\n❔ If you're having an issue with Modrinth product, use our [dedicated support portal](<https://support.modrinth.com>) instead\n\n🔔 Don't forget to mark your thread as solved if issue has been resolved by using </solved:1361745562063605781>", color=1825130)
+      embed.set_footer(text="🤖 Beep boop. I am just a bot, do not reply to this message.")
+      await thread.send(embed=embed)
+
   async def on_message(self, message: discord.Message):
     if message.author == self.user:
       return
