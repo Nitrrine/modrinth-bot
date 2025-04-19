@@ -4,7 +4,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+DB_USER = getenv("DB_USER")
+DB_PASS = getenv("DB_PASS")
+DB_HOST = getenv("DB_HOST")
+DB_PORT = getenv("DB_PORT")
+DB_NAME = getenv("DB_NAME")
+
 BOT_TOKEN = getenv("BOT_TOKEN")
+
 ACTIVE_ROLE = discord.Object(id=getenv("ACTIVE_ROLE"))
 MODERATOR_ROLE = discord.Object(id=getenv("MODERATOR_ROLE"))
 COMMUNITY_SUPPORT_FORUM = discord.Object(id=getenv("COMMUNITY_SUPPORT_FORUM"))

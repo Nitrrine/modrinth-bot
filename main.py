@@ -2,6 +2,7 @@ import discord
 import logging
 import config
 import re
+import db
 from discord.ext import commands
 
 logger = logging.getLogger("discord")
@@ -57,6 +58,13 @@ class Client(commands.Bot):
     except Exception as e:
       logger.error(f"Error syncing commands: {e}")
 
+  async def on_reaction_add(self, reaction: discord.Reaction, user: discord.Member):
+    for role in user.roles:
+      if role.id == config.MODERATOR_ROLE.id:
+        if reaction.emoji == "⚠️":
+          if re.search(f"<@&{config.MODERATOR_ROLE.id}>", reaction.message.content):
+            await reaction.message.reply("-# <:cornerdownright:1361748452991570173> Please don't ping discord moderators, if you want to report a concern - either use ModMail or a new report feature, [learn more here](https://discord.com/channels/734077874708938864/734084055225597973/1353546687502745673).")
+
   async def on_thread_create(self, thread: discord.Thread):
     if thread.parent_id == config.COMMUNITY_SUPPORT_FORUM.id:
       embed = discord.Embed(description="**👋 Hello! Thank you for creating a new thread on Modrinth server**\n\n📃 Something went wrong with the game? Make sure to provide logs using <https://mclo.gs>\n❔ If you're having an issue with Modrinth product, use our [dedicated support portal](<https://support.modrinth.com>) instead\n\n🔔 Don't forget to mark your thread as solved if issue has been resolved by using </solved:1361745562063605781>", color=1825130)
@@ -102,7 +110,7 @@ class Client(commands.Bot):
       pass
 
 
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.message_content = True
 
 client = Client(command_prefix="!", intents=intents)
