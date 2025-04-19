@@ -2,7 +2,6 @@ import discord
 import logging
 import config
 import re
-import db
 from discord.ext import commands
 
 logger = logging.getLogger("discord")
@@ -63,12 +62,20 @@ class Client(commands.Bot):
       if role.id == config.MODERATOR_ROLE.id:
         if reaction.emoji == "⚠️":
           if re.search(f"<@&{config.MODERATOR_ROLE.id}>", reaction.message.content):
-            await reaction.message.reply("-# <:cornerdownright:1361748452991570173> Please don't ping discord moderators, if you want to report a concern - either use ModMail or a new report feature, [learn more here](https://discord.com/channels/734077874708938864/734084055225597973/1353546687502745673).")
+            await reaction.message.reply(
+              "-# <:cornerdownright:1361748452991570173> Please don't ping discord moderators, if you want to report a concern - either use ModMail or a new report feature, [learn more here](https://discord.com/channels/734077874708938864/734084055225597973/1353546687502745673)."
+            )
+            await reaction.remove(user)
 
   async def on_thread_create(self, thread: discord.Thread):
     if thread.parent_id == config.COMMUNITY_SUPPORT_FORUM.id:
-      embed = discord.Embed(description="**👋 Hello! Thank you for creating a new thread on Modrinth server**\n\n📃 Something went wrong with the game? Make sure to provide logs using <https://mclo.gs>\n❔ If you're having an issue with Modrinth product, use our [dedicated support portal](<https://support.modrinth.com>) instead\n\n🔔 Don't forget to mark your thread as solved if issue has been resolved by using </solved:1361745562063605781>", color=1825130)
-      embed.set_footer(text="🤖 Beep boop. I am just a bot, do not reply to this message.")
+      embed = discord.Embed(
+        description="**👋 Hello! Thank you for creating a new thread on Modrinth server**\n\n📃 Something went wrong with the game? Make sure to provide logs using <https://mclo.gs>\n❔ If you're having an issue with Modrinth product, use our [dedicated support portal](<https://support.modrinth.com>) instead\n\n🔔 Don't forget to mark your thread as solved if issue has been resolved by using </solved:1361745562063605781>",
+        color=1825130,
+      )
+      embed.set_footer(
+        text="🤖 Beep boop. I am just a bot, do not reply to this message."
+      )
       await thread.send(embed=embed)
 
   async def on_message(self, message: discord.Message):
@@ -90,7 +97,10 @@ class Client(commands.Bot):
     # Regex triggers to suggest users to mark their thread's solved
     try:
       if message.channel.parent_id:
-        if message.channel.parent_id == config.COMMUNITY_SUPPORT_FORUM.id and message.author.id == message.channel.owner_id:
+        if (
+          message.channel.parent_id == config.COMMUNITY_SUPPORT_FORUM.id
+          and message.author.id == message.channel.owner_id
+        ):
           if re.search(
             "(it (works|worked))|thank you|ty|tysm|works now|solved",
             message.content.lower(),
@@ -98,7 +108,10 @@ class Client(commands.Bot):
             await message.reply(
               "-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:1361745562063605781>"
             )
-        if message.channel.parent_id == config.FIND_A_PROJECT_FORUM.id and message.author.id == message.channel.owner_id:
+        if (
+          message.channel.parent_id == config.FIND_A_PROJECT_FORUM.id
+          and message.author.id == message.channel.owner_id
+        ):
           if re.search(
             "((yes|yup) thanks)|thank you|ty|tysm|found it|solved",
             message.content.lower(),
