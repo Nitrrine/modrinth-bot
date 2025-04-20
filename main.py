@@ -2,6 +2,7 @@ import discord
 import logging
 import config
 import re
+import db
 from discord.ext import commands
 
 logger = logging.getLogger("discord")
@@ -46,6 +47,29 @@ blacklisted_file_extensions = [
   "iso",
 ]
 
+try:
+  logger.info("Connecting to PostgreSQL database...")
+
+  with db.get_conn() as conn:
+    with conn.cursor() as cur:
+      cur.execute("""
+        CREATE TABLE threads (
+          id SERIAL PRIMARY KEY,
+          title TEXT NOT NULL,
+          description TEXT NOT NULL,
+          thread_id BIGINT NOT NULL,
+          owner_id BIGINT NOT NULL)
+      """)
+
+      cur.execute("SELECT * FROM threads")
+
+      logger.info(cur.fetchone())
+
+      conn.commit()
+except db.psycopg.DatabaseError as e:
+  logger.error("An error occurred when connecting to PostgreSQL database.")
+  logger.error(e)
+
 
 class Client(commands.Bot):
   async def on_ready(self):
@@ -69,12 +93,27 @@ class Client(commands.Bot):
 
   async def on_thread_create(self, thread: discord.Thread):
     if thread.parent_id == config.COMMUNITY_SUPPORT_FORUM.id:
+      starter_message = thread.starter_message or await thread.fetch_message(thread.id)
+
+      with db.get_conn() as conn:
+        with conn.cursor() as cur:
+          cur.execute(
+            "INSERT INTO threads (title, description, thread_id, owner_id) VALUES (%s, %s, %s, %s) RETURNING id",
+            (thread.name, starter_message.content, thread.id, thread.owner_id),
+          )
+
+          new_entry_id = cur.fetchone()[0]
+          conn.commit()
+
       embed = discord.Embed(
-        description="**👋 Hello! Thank you for creating a new thread on Modrinth server**\n\n📃 Something went wrong with the game? Make sure to provide logs using <https://mclo.gs>\n❔ If you're having an issue with Modrinth product, use our [dedicated support portal](<https://support.modrinth.com>) instead\n\n🔔 Don't forget to mark your thread as solved if issue has been resolved by using </solved:1361745562063605781>",
+        description="**👋 Hello! Thank you for creating a new thread on Modrinth server**\n\n"
+        "📃 Something went wrong with the game? Make sure to provide logs using [mclo.gs](https://mclo.gs)\n"
+        "❔ If you're having an issue with Modrinth product, use our [dedicated support portal](<https://support.modrinth.com>) instead\n\n"
+        "🔔 Don't forget to mark your thread as solved if issue has been resolved by using </solved:1361745562063605781>",
         color=1825130,
       )
       embed.set_footer(
-        text="🤖 Beep boop. I am just a bot, do not reply to this message."
+        text=f"🤖 Beep boop. I am just a bot, do not reply to this message. Internal Thread ID: {new_entry_id}"
       )
       await thread.send(embed=embed)
 
@@ -134,6 +173,56 @@ client = Client(command_prefix="!", intents=intents)
 )
 async def cmdInfo(interaction: discord.Interaction):
   await interaction.response.send_message("Hello! I'm here to-")
+
+
+@client.tree.command(
+  name="thread", description="Get information about a thread.", guild=config.GUILD
+)
+async def cmdThread(interaction: discord.Interaction, thread_id: int):
+  for role in interaction.user.roles:
+    logger.info(role.id == config.MODERATOR_ROLE.id)
+    if role.id == config.MODERATOR_ROLE.id:
+      with db.get_conn() as conn:
+        with conn.cursor() as cur:
+          cur.execute(f"SELECT * FROM threads WHERE id = {thread_id}")
+
+          thread = cur.fetchone()
+
+          if thread:
+            await interaction.response.send_message(
+              f"## Thread Information\n"
+              f"**Title:** {thread[1]}\n"
+              f"**Description:** {thread[2]}\n"
+              f"**Discord ID:** `{thread[3]}`\n"
+              f"**Owner ID:** `{thread[4]}`\n"
+              f"-# <:cornerdownright:1361748452991570173> Internal Thread ID: {thread[0]}"
+            )
+          else:
+            await interaction.response.send_message("Requested thread is not found.")
+  await interaction.response.send_message("You don't have access to this command.")
+
+
+@client.tree.command(name="close", description="Close thread.", guild=config.GUILD)
+async def cmdClose(interaction: discord.Interaction, thread_id: int):
+  for role in interaction.user.roles:
+    if role.id == config.MODERATOR_ROLE.id:
+      with db.get_conn() as conn:
+        with conn.cursor() as cur:
+          cur.execute(f"SELECT * FROM threads WHERE id = {thread_id}")
+
+          thread = cur.fetchone()
+
+          if thread:
+            await interaction.guild.get_thread(thread[3]).add_tags(
+              config.COMMUNITY_SUPPORT_FORUM_SOLVED_TAG
+            )
+            await interaction.guild.get_thread(thread[3]).edit(archived=True)
+            await interaction.response.send_message(
+              f"Closed thread with ID: {thread_id}."
+            )
+          else:
+            await interaction.response.send_message("Requested thread is not found.")
+  await interaction.response.send_message("You don't have access to this command.")
 
 
 @client.tree.command(
