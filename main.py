@@ -3,7 +3,9 @@ import logging
 import config
 import re
 import db
+import datetime
 from discord.ext import commands
+from datetime import timezone
 
 logger = logging.getLogger("discord")
 logger.setLevel(logging.DEBUG)
@@ -39,41 +41,39 @@ blacklisted_file_extensions = [
   "ps1",
   "bat",
   "sh",
-  "rar",
-  "zip",
-  "7z",
-  "tar",
-  "gz",
   "iso",
 ]
-
-try:
-  logger.info("Connecting to PostgreSQL database...")
-
-  with db.get_conn() as conn:
-    with conn.cursor() as cur:
-      cur.execute("""
-        CREATE TABLE threads (
-          id SERIAL PRIMARY KEY,
-          title TEXT NOT NULL,
-          description TEXT NOT NULL,
-          thread_id BIGINT NOT NULL,
-          owner_id BIGINT NOT NULL)
-      """)
-
-      cur.execute("SELECT * FROM threads")
-
-      logger.info(cur.fetchone())
-
-      conn.commit()
-except db.psycopg.DatabaseError as e:
-  logger.error("An error occurred when connecting to PostgreSQL database.")
-  logger.error(e)
 
 
 class Client(commands.Bot):
   async def on_ready(self):
     logger.info(f"Logged on as {self.user}!")
+
+    try:
+      logger.info("Connecting to PostgreSQL database")
+
+      with db.get_conn() as conn:
+        with conn.cursor() as cur:
+          cur.execute("""
+            CREATE TABLE IF NOT EXISTS threads (
+              id SERIAL PRIMARY KEY,
+              title TEXT NOT NULL,
+              description TEXT NOT NULL,
+              status TEXT NOT NULL,
+              created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+              thread_id BIGINT NOT NULL,
+              owner_id BIGINT NOT NULL)
+          """)
+
+          cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+              id SERIAL PRIMARY KEY,
+              user_id BIGINT NOT NULL,
+              messages_count INTEGER NOT NULL)
+          """)
+    except db.psycopg.DatabaseError as e:
+      logger.error("An error occurred when connecting to PostgreSQL database.")
+      logger.error(e)
 
     try:
       synced = await self.tree.sync(guild=config.GUILD)
@@ -98,8 +98,15 @@ class Client(commands.Bot):
       with db.get_conn() as conn:
         with conn.cursor() as cur:
           cur.execute(
-            "INSERT INTO threads (title, description, thread_id, owner_id) VALUES (%s, %s, %s, %s) RETURNING id",
-            (thread.name, starter_message.content, thread.id, thread.owner_id),
+            "INSERT INTO threads (title, description, status, created_at, thread_id, owner_id) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+            (
+              thread.name,
+              starter_message.content,
+              "open",
+              datetime.datetime.now(timezone.utc),
+              thread.id,
+              thread.owner_id,
+            ),
           )
 
           new_entry_id = cur.fetchone()[0]
@@ -113,13 +120,39 @@ class Client(commands.Bot):
         color=1825130,
       )
       embed.set_footer(
-        text=f"🤖 Beep boop. I am just a bot, do not reply to this message. Internal Thread ID: {new_entry_id}"
+        text=f"🤖 Beep boop, do not reply to this message. Internal Thread ID: {new_entry_id}."
       )
       await thread.send(embed=embed)
 
   async def on_message(self, message: discord.Message):
     if message.author == self.user:
       return
+
+    # Active role management
+    if len(message.content) > 10:
+      with db.get_conn() as conn:
+        with conn.cursor() as cur:
+          cur.execute("SELECT * FROM users WHERE user_id = %s", (message.author.id,))
+
+          user = cur.fetchone()
+
+          # Add user to database if not exists
+          if user:
+            cur.execute(
+              "UPDATE users SET messages_count = %s WHERE user_id = %s",
+              ((user[2] + 1), message.author.id),
+            )
+          else:
+            cur.execute(
+              "INSERT INTO users (user_id, messages_count) VALUES (%s, %s)",
+              (message.author.id, 0),
+            )
+
+          cur.execute(
+            "SELECT messages_count FROM users WHERE user_id = %s", (message.author.id,)
+          )
+
+          messages_count = cur.fetchone()[0]
 
     # Checks if user sent blacklisted file type
     if message.attachments:
@@ -176,15 +209,81 @@ async def cmdInfo(interaction: discord.Interaction):
 
 
 @client.tree.command(
-  name="thread", description="Get information about a thread.", guild=config.GUILD
+  name="user", description="Get information about user.", guild=config.GUILD
 )
-async def cmdThread(interaction: discord.Interaction, thread_id: int):
+async def cmdUser(interaction: discord.Interaction, user_id: str):
   for role in interaction.user.roles:
-    logger.info(role.id == config.MODERATOR_ROLE.id)
     if role.id == config.MODERATOR_ROLE.id:
       with db.get_conn() as conn:
         with conn.cursor() as cur:
-          cur.execute(f"SELECT * FROM threads WHERE id = {thread_id}")
+          cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+
+          user = cur.fetchone()
+
+          if user:
+            await interaction.response.send_message(f"Internal User ID: {user[0]}\nDiscord User ID: {user[1]}\nMessage count: {user[2]}")
+          else:
+            await interaction.response.send_message("Requested user not found.")
+
+
+@client.tree.command(
+  name="reset-user", description="Reset user's messages count.", guild=config.GUILD
+)
+async def cmdResetUser(interaction: discord.Interaction, user_id: str):
+  for role in interaction.user.roles:
+    if role.id == config.MODERATOR_ROLE.id:
+      with db.get_conn() as conn:
+        with conn.cursor() as cur:
+          cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+
+          user = cur.fetchone()
+
+          if user:
+            cur.execute("UPDATE users SET messages_count = 0 WHERE user_id = %s", (user_id,))
+            await interaction.response.send_message("User has been reset.")
+          else:
+            await interaction.response.send_message("Requested user not found.")
+
+
+@client.tree.command(
+  name="get-open-threads", description="Get all open threads", guild=config.GUILD
+)
+async def cmdGetOpenThreads(interaction: discord.Interaction):
+  with db.get_conn() as conn:
+    with conn.cursor() as cur:
+      cur.execute("SELECT * FROM threads WHERE status = 'open'")
+
+      open_threads = cur.fetchall()
+
+      await interaction.response.send_message(
+        f"There's currently **{len(open_threads)}** open threads."
+      )
+
+
+@client.tree.command(
+  name="get-closed-threads", description="Get all closed threads", guild=config.GUILD
+)
+async def cmdGetClosedThreads(interaction: discord.Interaction):
+  with db.get_conn() as conn:
+    with conn.cursor() as cur:
+      cur.execute("SELECT * FROM threads WHERE status = 'closed'")
+
+      closed_threads = cur.fetchall()
+
+      await interaction.response.send_message(
+        f"There's currently **{len(closed_threads)}** closed threads."
+      )
+
+
+@client.tree.command(
+  name="thread", description="Get information about a thread.", guild=config.GUILD
+)
+async def cmdThread(interaction: discord.Interaction, id: int):
+  for role in interaction.user.roles:
+    if role.id == config.MODERATOR_ROLE.id:
+      with db.get_conn() as conn:
+        with conn.cursor() as cur:
+          cur.execute(f"SELECT * FROM threads WHERE id = {id}")
 
           thread = cur.fetchone()
 
@@ -193,36 +292,36 @@ async def cmdThread(interaction: discord.Interaction, thread_id: int):
               f"## Thread Information\n"
               f"**Title:** {thread[1]}\n"
               f"**Description:** {thread[2]}\n"
-              f"**Discord ID:** `{thread[3]}`\n"
-              f"**Owner ID:** `{thread[4]}`\n"
+              f"**Status:** {thread[3]}\n"
+              f"**Discord ID:** `{thread[4]}`\n"
+              f"**Owner ID:** `{thread[5]}`\n"
               f"-# <:cornerdownright:1361748452991570173> Internal Thread ID: {thread[0]}"
             )
           else:
             await interaction.response.send_message("Requested thread is not found.")
-  await interaction.response.send_message("You don't have access to this command.")
 
 
 @client.tree.command(name="close", description="Close thread.", guild=config.GUILD)
-async def cmdClose(interaction: discord.Interaction, thread_id: int):
+async def cmdClose(interaction: discord.Interaction, id: int):
   for role in interaction.user.roles:
     if role.id == config.MODERATOR_ROLE.id:
       with db.get_conn() as conn:
         with conn.cursor() as cur:
-          cur.execute(f"SELECT * FROM threads WHERE id = {thread_id}")
+          cur.execute("SELECT * FROM threads WHERE id = %s", (id,))
 
           thread = cur.fetchone()
+          thread_id = thread[5]
 
           if thread:
-            await interaction.guild.get_thread(thread[3]).add_tags(
+            await interaction.guild.get_thread(thread_id).add_tags(
               config.COMMUNITY_SUPPORT_FORUM_SOLVED_TAG
             )
-            await interaction.guild.get_thread(thread[3]).edit(archived=True)
-            await interaction.response.send_message(
-              f"Closed thread with ID: {thread_id}."
-            )
+            await interaction.guild.get_thread(thread_id).edit(archived=True)
+            await interaction.response.send_message(f"Closed thread with ID: {id}.")
+
+            cur.execute("UPDATE threads SET status = 'closed' WHERE id = %s", (id,))
           else:
             await interaction.response.send_message("Requested thread is not found.")
-  await interaction.response.send_message("You don't have access to this command.")
 
 
 @client.tree.command(
@@ -234,6 +333,17 @@ async def cmdSolved(interaction: discord.Interaction):
   if interaction.channel.parent_id:
     if interaction.channel.parent_id == config.COMMUNITY_SUPPORT_FORUM.id:
       if interaction.channel.owner_id == interaction.user.id:
+        with db.get_conn() as conn:
+          with conn.cursor() as cur:
+            cur.execute(
+              "SELECT * FROM threads WHERE thread_id = %s", (interaction.channel_id,)
+            )
+
+            thread = cur.fetchone()
+
+            cur.execute(
+              "UPDATE threads SET status = 'closed' WHERE id = %s", (thread[0],)
+            )
         await interaction.response.send_message(
           "Marked this thread as solved and closed!"
         )
