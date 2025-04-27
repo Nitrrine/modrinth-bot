@@ -7,8 +7,8 @@ ADD ./src /app
 ENV UV_LINK_MODE=copy
 
 # Sync the project into a new environment, using the frozen lockfile
-WORKDIR /app
+WORKDIR /app/src
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --compile-bytecode
 
-CMD ["uv", "run", "src/main.py"]
+CMD ["uv", "run", "main.py"]
