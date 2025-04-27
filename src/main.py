@@ -154,6 +154,13 @@ class Client(commands.Bot):
 
           messages_count = cur.fetchone()[0]
 
+          if messages_count > 10:
+            for role in message.author.roles:
+              if role.id == config.ACTIVE_ROLE:
+                return
+              
+            await message.author.add_roles(config.ACTIVE_ROLE)
+
     # Checks if user sent blacklisted file type
     if message.attachments:
       for attachment in message.attachments:
@@ -205,7 +212,7 @@ client = Client(command_prefix="!", intents=intents)
   name="info", description="Information about the bot.", guild=config.GUILD
 )
 async def cmdInfo(interaction: discord.Interaction):
-  await interaction.response.send_message("Hello! I'm here to-")
+  await interaction.response.send_message("Hello! I'm Modrinth Bot, my main purpose is [REDACTED].")
 
 
 @client.tree.command(
@@ -243,7 +250,7 @@ async def cmdUser(interaction: discord.Interaction, user_id: str):
 
 
 @client.tree.command(
-  name="reset-user", description="Reset user's messages count.", guild=config.GUILD
+  name="reset", description="Reset user's messages count.", guild=config.GUILD
 )
 async def cmdResetUser(interaction: discord.Interaction, user_id: str):
   for role in interaction.user.roles:
@@ -258,6 +265,7 @@ async def cmdResetUser(interaction: discord.Interaction, user_id: str):
             cur.execute(
               "UPDATE users SET messages_count = 0 WHERE user_id = %s", (user_id,)
             )
+            await interaction.guild.get_member(discord.Object(id=user_id).id).remove_roles(config.ACTIVE_ROLE)
             await interaction.response.send_message("User has been reset.")
           else:
             await interaction.response.send_message("Requested user not found.")
