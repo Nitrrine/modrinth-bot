@@ -209,6 +209,20 @@ async def cmdInfo(interaction: discord.Interaction):
 
 
 @client.tree.command(
+  name="docs", description="Link to docs page.", guild=config.GUILD
+)
+async def cmdDocs(interaction: discord.Interaction, path: str):
+  await interaction.response.send_message(f"https://docs.modrinth.com/{path}")
+
+
+@client.tree.command(
+  name="github", description="Link to GitHub page.", guild=config.GUILD
+)
+async def cmdGithub(interaction: discord.Interaction, path: str):
+  await interaction.response.send_message(f"https://github.com/modrinth/{path}")
+
+
+@client.tree.command(
   name="user", description="Get information about user.", guild=config.GUILD
 )
 async def cmdUser(interaction: discord.Interaction, user_id: str):
@@ -221,7 +235,9 @@ async def cmdUser(interaction: discord.Interaction, user_id: str):
           user = cur.fetchone()
 
           if user:
-            await interaction.response.send_message(f"Internal User ID: {user[0]}\nDiscord User ID: {user[1]}\nMessage count: {user[2]}")
+            await interaction.response.send_message(
+              f"Internal User ID: {user[0]}\nDiscord User ID: {user[1]}\nMessage count: {user[2]}"
+            )
           else:
             await interaction.response.send_message("Requested user not found.")
 
@@ -239,7 +255,9 @@ async def cmdResetUser(interaction: discord.Interaction, user_id: str):
           user = cur.fetchone()
 
           if user:
-            cur.execute("UPDATE users SET messages_count = 0 WHERE user_id = %s", (user_id,))
+            cur.execute(
+              "UPDATE users SET messages_count = 0 WHERE user_id = %s", (user_id,)
+            )
             await interaction.response.send_message("User has been reset.")
           else:
             await interaction.response.send_message("Requested user not found.")
