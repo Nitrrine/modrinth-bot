@@ -154,7 +154,7 @@ class Client(commands.Bot):
 
           messages_count = cur.fetchone()[0]
 
-          if messages_count > 10:
+          if messages_count > 20:
             for role in message.author.roles:
               if role.id == config.ACTIVE_ROLE:
                 return
