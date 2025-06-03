@@ -216,21 +216,21 @@ async def cmdInfo(interaction: discord.Interaction):
 
 
 @client.tree.command(
-  name="docs", description="Link to docs page.", guild=config.GUILD
+  name="docs", description="Send a link to a documentation page.", guild=config.GUILD
 )
 async def cmdDocs(interaction: discord.Interaction, path: str):
   await interaction.response.send_message(f"https://docs.modrinth.com/{path}")
 
 
 @client.tree.command(
-  name="github", description="Link to GitHub page.", guild=config.GUILD
+  name="github", description="Send a link to a GitHub page.", guild=config.GUILD
 )
 async def cmdGithub(interaction: discord.Interaction, path: str):
   await interaction.response.send_message(f"https://github.com/modrinth/{path}")
 
 
 @client.tree.command(
-  name="user", description="Get information about user.", guild=config.GUILD
+  name="user", description="Get information about a user.", guild=config.GUILD
 )
 async def cmdUser(interaction: discord.Interaction, user_id: str):
   for role in interaction.user.roles:
@@ -272,7 +272,7 @@ async def cmdResetUser(interaction: discord.Interaction, user_id: str):
 
 
 @client.tree.command(
-  name="get-open-threads", description="Get all open threads", guild=config.GUILD
+  name="get-open-threads", description="Get all open threads.", guild=config.GUILD
 )
 async def cmdGetOpenThreads(interaction: discord.Interaction):
   with db.get_conn() as conn:
@@ -287,7 +287,7 @@ async def cmdGetOpenThreads(interaction: discord.Interaction):
 
 
 @client.tree.command(
-  name="get-closed-threads", description="Get all closed threads", guild=config.GUILD
+  name="get-closed-threads", description="Get all closed threads.", guild=config.GUILD
 )
 async def cmdGetClosedThreads(interaction: discord.Interaction):
   with db.get_conn() as conn:
@@ -298,6 +298,21 @@ async def cmdGetClosedThreads(interaction: discord.Interaction):
 
       await interaction.response.send_message(
         f"There's currently **{len(closed_threads)}** closed threads."
+      )
+
+
+@client.tree.command(
+  name="get-users-count", description="Get count of all users.", guild=config.GUILD
+)
+async def cmdGetUsersCount(interaction: discord.Interaction):
+  with db.get_conn() as conn:
+    with conn.cursor() as cur:
+      cur.execute("SELECT * FROM users")
+
+      total_users = cur.fetchall()
+
+      await interaction.response.send_message(
+        f"There's currently **{len(total_users)}** users in my system."
       )
 
 
