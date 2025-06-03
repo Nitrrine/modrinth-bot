@@ -116,7 +116,7 @@ class Client(commands.Bot):
         description="**👋 Hello! Thank you for creating a new thread on Modrinth server**\n\n"
         "📃 Something went wrong with the game? Make sure to provide logs using [mclo.gs](https://mclo.gs)\n"
         "❔ If you're having an issue with Modrinth product, use our [dedicated support portal](<https://support.modrinth.com>) instead\n\n"
-        "🔔 Don't forget to mark your thread as solved if issue has been resolved by using </solved:1361745562063605781>",
+        f"🔔 Don't forget to mark your thread as solved if issue has been resolved by using </solved:{config.SOLVED_COMMAND.id}>",
         color=1825130,
       )
       embed.set_footer(
@@ -181,22 +181,22 @@ class Client(commands.Bot):
           and message.author.id == message.channel.owner_id
         ):
           if re.search(
-            "(it (works|worked))|thank you|ty|tysm|works now|solved",
+            "(it (works|worked))|thank you|ty|tysm|works now|(solved|fixed) it",
             message.content.lower(),
           ):
             await message.reply(
-              "-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:1361745562063605781>"
+              f"-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:{config.SOLVED_COMMAND.id}>"
             )
         if (
           message.channel.parent_id == config.FIND_A_PROJECT_FORUM.id
           and message.author.id == message.channel.owner_id
         ):
           if re.search(
-            "((yes|yup) thanks)|thank you|ty|tysm|found it|solved",
+            "((yes|yup) thanks)|thank you|ty|tysm|(solved|found) it",
             message.content.lower(),
           ):
             await message.reply(
-              "-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:1361745562063605781>"
+              f"-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:{config.SOLVED_COMMAND.id}>"
             )
     except AttributeError:
       pass
