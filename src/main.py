@@ -93,7 +93,7 @@ class Client(commands.Bot):
 
   async def on_thread_create(self, thread: discord.Thread):
     if thread.parent_id == config.COMMUNITY_SUPPORT_FORUM.id:
-      starter_message = thread.starter_message or await thread.fetch_message(thread.id)
+      starter_message = await thread.fetch_message(thread.id)
 
       with db.get_conn() as conn:
         with conn.cursor() as cur:
@@ -130,13 +130,13 @@ class Client(commands.Bot):
 
     # Active role management
     if len(message.content) > 10:
+      messages_count = 0
+
       with db.get_conn() as conn:
         with conn.cursor() as cur:
           cur.execute("SELECT * FROM users WHERE user_id = %s", (message.author.id,))
-
           user = cur.fetchone()
 
-          # Add user to database if not exists
           if user:
             cur.execute(
               "UPDATE users SET messages_count = %s WHERE user_id = %s",
@@ -151,18 +151,17 @@ class Client(commands.Bot):
           cur.execute(
             "SELECT messages_count FROM users WHERE user_id = %s", (message.author.id,)
           )
-
           messages_count = cur.fetchone()[0]
 
-          if messages_count >= 20:
-            for role in message.author.roles:
-              if role.id == config.ACTIVE_ROLE.id:
-                return
+      if messages_count >= 20:
+        for role in message.author.roles:
+          if role.id == config.ACTIVE_ROLE.id:
+            return
 
-            await message.author.add_roles(config.ACTIVE_ROLE)
-            await message.guild.get_thread(config.USER_ACTIVATION_CHANNEL.id).send(
-              f":white_check_mark: User {message.author.mention} ({message.author.name}, ID: {message.author.id}) has been automatically verified for 20 counted messages."
-            )
+        await message.author.add_roles(config.ACTIVE_ROLE)
+        await message.guild.get_thread(config.USER_ACTIVATION_CHANNEL.id).send(
+          f":white_check_mark: User {message.author.mention} ({message.author.name}, ID: {message.author.id}) has been automatically verified for 20 counted messages."
+        )
 
     # Checks if user sent blacklisted file type
     if message.attachments:
@@ -215,7 +214,9 @@ client = Client(command_prefix="!", intents=intents)
   name="info", description="Information about the bot.", guild=config.GUILD
 )
 async def cmdInfo(interaction: discord.Interaction):
-  await interaction.response.send_message("Hello! I'm Modrinth Bot, my main purpose is [REDACTED].")
+  await interaction.response.send_message(
+    "Hello! I'm Modrinth Bot, my main purpose is [REDACTED]."
+  )
 
 
 @client.tree.command(
@@ -268,7 +269,9 @@ async def cmdResetUser(interaction: discord.Interaction, user_id: str):
             cur.execute(
               "UPDATE users SET messages_count = 0 WHERE user_id = %s", (user_id,)
             )
-            await interaction.guild.get_member(discord.Object(id=user_id).id).remove_roles(config.ACTIVE_ROLE)
+            await interaction.guild.get_member(
+              discord.Object(id=user_id).id
+            ).remove_roles(config.ACTIVE_ROLE)
             await interaction.response.send_message("User has been reset.")
           else:
             await interaction.response.send_message("Requested user not found.")
