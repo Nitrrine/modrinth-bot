@@ -26,4 +26,5 @@ SOLVED_COMMAND = discord.Object(
   id=getenv("SOLVED_COMMAND")
 )
 ALERT_CHANNEL = discord.Object(id=getenv("ALERT_CHANNEL"))
+USER_ACTIVATION_CHANNEL = discord.Object(id=getenv("USER_ACTIVATION_CHANNEL"))
 GUILD = discord.Object(id=getenv("GUILD"))

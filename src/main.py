@@ -154,12 +154,15 @@ class Client(commands.Bot):
 
           messages_count = cur.fetchone()[0]
 
-          if messages_count > 20:
+          if messages_count >= 20:
             for role in message.author.roles:
-              if role.id == config.ACTIVE_ROLE:
+              if role.id == config.ACTIVE_ROLE.id:
                 return
-              
+
             await message.author.add_roles(config.ACTIVE_ROLE)
+            await message.guild.get_thread(config.USER_ACTIVATION_CHANNEL.id).send(
+              f":white_check_mark: User {message.author.mention} ({message.author.name}, ID: {message.author.id}) has been automatically verified for 20 counted messages."
+            )
 
     # Checks if user sent blacklisted file type
     if message.attachments:
@@ -243,7 +246,7 @@ async def cmdUser(interaction: discord.Interaction, user_id: str):
 
           if user:
             await interaction.response.send_message(
-              f"Internal User ID: {user[0]}\nDiscord User ID: {user[1]}\nMessage count: {user[2]}"
+              f"Internal User ID: {user[0]}\nDiscord User ID: {user[1]}\nMessage Count: {user[2]}"
             )
           else:
             await interaction.response.send_message("Requested user not found.")
