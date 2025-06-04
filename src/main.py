@@ -67,8 +67,7 @@ class Client(commands.Bot):
 
           cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
-              id SERIAL PRIMARY KEY,
-              user_id BIGINT NOT NULL,
+              user_id BIGINT PRIMARY KEY,
               messages_count INTEGER NOT NULL)
           """)
     except db.psycopg.DatabaseError as e:
@@ -247,7 +246,7 @@ async def cmdUser(interaction: discord.Interaction, user_id: str):
 
           if user:
             await interaction.response.send_message(
-              f"Internal User ID: {user[0]}\nDiscord User ID: {user[1]}\nMessage Count: {user[2]}"
+              f"User ID: {user[0]}\nMessage Count: {user[1]}"
             )
           else:
             await interaction.response.send_message("Requested user not found.")
