@@ -176,7 +176,7 @@ class Client(commands.Bot):
 
         if attachment.filename == "message.txt":
           await message.reply(
-            f"⚠️ **Do NOT send logs as txt files, use [mclo.gs](<https://mclo.gs>) instead!**"
+            "⚠️ **Do NOT send logs as txt files, use [mclo.gs](<https://mclo.gs>) instead!**"
           )
 
     # Regex triggers to suggest users to mark their thread's solved
