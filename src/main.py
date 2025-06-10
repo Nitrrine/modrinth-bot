@@ -173,6 +173,9 @@ class Client(commands.Bot):
             f"User {message.author.mention} (`{message.author.name}`, ID: {message.author.id}) attempted to sent a blacklisted file type in {message.channel.mention}.\n> Filename: `{attachment.filename}`\n> URL: {attachment.url}"
           )
           await message.delete()
+        
+        if attachment.filename == "message.txt":
+          await message.reply(f"⚠️ **Do NOT send logs as txt files, use [mclo.gs](<https://mclo.gs>) instead!**")
 
     # Regex triggers to suggest users to mark their thread's solved
     try:
