@@ -180,9 +180,10 @@ class Client(commands.Bot):
         if (
           message.channel.parent_id == config.COMMUNITY_SUPPORT_FORUM.id
           and message.author.id == message.channel.owner_id
+          and message.id != message.channel.starter_message.id
         ):
           if re.search(
-            "(it (works|worked))|thank you|ty|tysm|works now|(solved|fixed) it",
+            "(it (works|worked))|thank you|\\b(ty|thx)\\b|tysm|works now|(solved|fixed) it",
             message.content.lower(),
           ):
             await message.reply(
@@ -191,9 +192,10 @@ class Client(commands.Bot):
         if (
           message.channel.parent_id == config.FIND_A_PROJECT_FORUM.id
           and message.author.id == message.channel.owner_id
+          and message.id != message.channel.starter_message.id
         ):
           if re.search(
-            "((yes|yup) thanks)|thank you|ty|tysm|(solved|found) it",
+            "((yes|yup) thanks)|thank you|\\b(ty|thx)\\b|tysm|(solved|found) it",
             message.content.lower(),
           ):
             await message.reply(
@@ -206,7 +208,7 @@ class Client(commands.Bot):
 intents = discord.Intents.all()
 intents.message_content = True
 
-client = Client(command_prefix="!", intents=intents)
+client = Client(command_prefix="!", intents=intents, activity=discord.Game("with frogs"))
 
 
 @client.tree.command(
