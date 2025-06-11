@@ -209,6 +209,13 @@ class Client(commands.Bot):
     except AttributeError:
       pass
 
+  async def on_message_delete(self, message: discord.Message):
+    if message.thread is not None:
+      await message.channel.send(
+        "OP deleted original starter message, this thread will be now marked as closed."
+      )
+      await message.thread.edit(locked=True, archived=True)
+
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -371,7 +378,9 @@ async def cmdClose(interaction: discord.Interaction, id: int):
             await interaction.guild.get_thread(thread_id).add_tags(
               config.COMMUNITY_SUPPORT_FORUM_SOLVED_TAG
             )
-            await interaction.guild.get_thread(thread_id).edit(archived=True)
+            await interaction.guild.get_thread(thread_id).edit(
+              locked=True, archived=True
+            )
             await interaction.response.send_message(f"Closed thread with ID: {id}.")
 
             cur.execute("UPDATE threads SET status = 'closed' WHERE id = %s", (id,))
@@ -400,18 +409,18 @@ async def cmdSolved(interaction: discord.Interaction):
               "UPDATE threads SET status = 'closed' WHERE id = %s", (thread[0],)
             )
         await interaction.response.send_message(
-          "Marked this thread as solved and closed!"
+          ":white_check_mark: This thread has been marked as solved."
         )
         await interaction.channel.add_tags(config.COMMUNITY_SUPPORT_FORUM_SOLVED_TAG)
-        await interaction.channel.edit(archived=True)
+        await interaction.channel.edit(locked=True, archived=True)
 
     if interaction.channel.parent_id == config.FIND_A_PROJECT_FORUM.id:
       if interaction.channel.owner_id == interaction.user.id:
         await interaction.response.send_message(
-          "Marked this thread as found and closed!"
+          ":white_check_mark: This thread has been marked as solved."
         )
         await interaction.channel.add_tags(config.FIND_A_PROJECT_FORUM_SOLVED_TAG)
-        await interaction.channel.edit(archived=True)
+        await interaction.channel.edit(locked=True, archived=True)
 
 
 client.run(config.BOT_TOKEN)
