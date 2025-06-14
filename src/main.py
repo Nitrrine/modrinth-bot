@@ -238,14 +238,18 @@ async def cmdInfo(interaction: discord.Interaction):
   name="docs", description="Send a link to a documentation page.", guild=config.GUILD
 )
 async def cmdDocs(interaction: discord.Interaction, path: str):
-  await interaction.response.send_message(f'https://docs.modrinth.com/{"".join(path.split())}')
+  await interaction.response.send_message(
+    f"https://docs.modrinth.com/{''.join(path.split())}"
+  )
 
 
 @client.tree.command(
   name="github", description="Send a link to a GitHub page.", guild=config.GUILD
 )
 async def cmdGithub(interaction: discord.Interaction, path: str):
-  await interaction.response.send_message(f'https://github.com/modrinth/{"".join(path.split())}')
+  await interaction.response.send_message(
+    f"https://github.com/modrinth/{''.join(path.split())}"
+  )
 
 
 @client.tree.command(
