@@ -159,7 +159,7 @@ class Client(commands.Bot):
 
         await message.author.add_roles(config.ACTIVE_ROLE)
         await message.guild.get_thread(config.USER_ACTIVATION_CHANNEL.id).send(
-          f":white_check_mark: User {message.author.mention} ({message.author.name}, ID: {message.author.id}) has been automatically verified for 20 counted messages."
+          f":white_check_mark: User {message.author.mention} (`{message.author.name}`, ID: {message.author.id}) has been automatically verified for 20 counted messages."
         )
 
     # Checks if user sent blacklisted file type
@@ -174,7 +174,7 @@ class Client(commands.Bot):
           )
           await message.delete()
 
-        if attachment.filename == "message.txt":
+        if attachment.filename == "message.txt" or attachment.filename == "latest.log":
           await message.reply(
             "⚠️ **Do NOT send logs as txt files, use [mclo.gs](<https://mclo.gs>) instead!**"
           )
