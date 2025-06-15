@@ -132,7 +132,7 @@ class Client(commands.Bot):
     username = message.author.name  # username, not full tag
 
     # Check if display_name contains anything other than letters or digits
-    if not re.fullmatch(r"[a-z0-9._]+", display_name.lower()):
+    if not re.fullmatch(r"[\x00-\x7F]+", display_name.lower()):
       # Ignore nickname policy for activated members
       for role in message.author.roles:
         if role.id == config.ACTIVE_ROLE.id:
