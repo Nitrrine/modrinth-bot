@@ -133,6 +133,10 @@ class Client(commands.Bot):
 
     # Check if display_name contains anything other than letters or digits
     if not re.fullmatch(r"[a-z0-9._]+", display_name.lower()):
+      # Ignore nickname policy for activated members
+      for role in message.author.roles:
+        if role.id == config.ACTIVE_ROLE.id:
+          return
       try:
         await message.author.edit(nick=username.title())
         logger.info(f"Reset nickname for {username} to their username.")
