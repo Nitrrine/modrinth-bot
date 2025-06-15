@@ -127,6 +127,20 @@ class Client(commands.Bot):
     if message.author == self.user:
       return
 
+    # Enforce nickname policy
+    display_name = message.author.display_name
+    username = message.author.name  # username, not full tag
+
+    # Check if display_name contains anything other than letters or digits
+    if not re.fullmatch(r"[a-z0-9._]+", display_name):
+      try:
+        await message.author.edit(nick=username.title())
+        logger.info(f"Reset nickname for {username} to their username.")
+      except discord.Forbidden:
+        logger.warning(f"Missing permissions to change nickname for {username}.")
+      except discord.HTTPException as e:
+        logger.error(f"Failed to change nickname: {e}")
+
     # Active role management
     if len(message.content) > 10:
       messages_count = 0
@@ -139,7 +153,7 @@ class Client(commands.Bot):
           if user:
             cur.execute(
               "UPDATE users SET messages_count = %s WHERE user_id = %s",
-              ((user[2] + 1), message.author.id),
+              ((user[1] + 1), message.author.id),
             )
           else:
             cur.execute(
