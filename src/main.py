@@ -139,10 +139,19 @@ class Client(commands.Bot):
           return
       try:
         await message.author.edit(nick=username.title())
+        await message.guild.get_thread(config.LOG_CHANNEL.id).send(
+          f":pencil2: Reset nickname for user {message.author.mention} (`{message.author.name}`, ID: {message.author.id}) from `{display_name}` to `{username}`."
+        )
         logger.info(f"Reset nickname for {username} to their username.")
       except discord.Forbidden:
         logger.warning(f"Missing permissions to change nickname for {username}.")
+        await message.guild.get_thread(config.LOG_CHANNEL.id).send(
+          f":warning: Missing permissions to reset nickname for user {message.author.mention} (`{message.author.name}`, ID: {message.author.id})."
+        )
       except discord.HTTPException as e:
+        await message.guild.get_thread(config.LOG_CHANNEL.id).send(
+          f":warning: Failed to reset nickname for user {message.author.mention} (`{message.author.name}`, ID: {message.author.id})."
+        )
         logger.error(f"Failed to change nickname: {e}")
 
     # Active role management
@@ -434,7 +443,7 @@ async def cmdSolved(interaction: discord.Interaction):
           ":white_check_mark: This thread has been marked as solved."
         )
         await interaction.channel.add_tags(config.COMMUNITY_SUPPORT_FORUM_SOLVED_TAG)
-        await interaction.channel.edit(locked=True, archived=True)
+        await interaction.channel.edit(archived=True)
 
     if interaction.channel.parent_id == config.FIND_A_PROJECT_FORUM.id:
       if interaction.channel.owner_id == interaction.user.id:
@@ -442,7 +451,7 @@ async def cmdSolved(interaction: discord.Interaction):
           ":white_check_mark: This thread has been marked as solved."
         )
         await interaction.channel.add_tags(config.FIND_A_PROJECT_FORUM_SOLVED_TAG)
-        await interaction.channel.edit(locked=True, archived=True)
+        await interaction.channel.edit(archived=True)
 
 
 client.run(config.BOT_TOKEN)
