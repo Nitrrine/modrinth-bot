@@ -132,7 +132,7 @@ class Client(commands.Bot):
     username = message.author.name  # username, not full tag
 
     # Check if display_name contains anything other than letters or digits
-    if not re.fullmatch(r"[\x00-\x7F]+", display_name.lower()):
+    if not re.fullmatch(r"^[\u0020-\u024F\-'. ]+$", display_name.lower()):
       # Ignore nickname policy for activated members
       for role in message.author.roles:
         if role.id == config.ACTIVE_ROLE.id:
@@ -140,7 +140,7 @@ class Client(commands.Bot):
       try:
         await message.author.edit(nick=username.title())
         await message.guild.get_thread(config.LOG_CHANNEL.id).send(
-          f":pencil2: Reset nickname for user {message.author.mention} (`{message.author.name}`, ID: {message.author.id}) from `{display_name}` to `{username}`."
+          f":pencil2: Reset nickname for user {message.author.mention} (`{message.author.name}`, ID: {message.author.id}) from `{display_name}` to `{username.title()}`."
         )
         logger.info(f"Reset nickname for {username} to their username.")
       except discord.Forbidden:
@@ -185,7 +185,7 @@ class Client(commands.Bot):
             return
 
         await message.author.add_roles(config.ACTIVE_ROLE)
-        await message.guild.get_thread(config.USER_ACTIVATION_CHANNEL.id).send(
+        await message.guild.get_thread(config.LOG_CHANNEL.id).send(
           f":white_check_mark: User {message.author.mention} (`{message.author.name}`, ID: {message.author.id}) has been automatically verified for 20 counted messages."
         )
 
@@ -197,7 +197,7 @@ class Client(commands.Bot):
           for ext in blacklisted_file_extensions
         ):
           await client.get_channel(config.ALERT_CHANNEL.id).send(
-            f"User {message.author.mention} (`{message.author.name}`, ID: {message.author.id}) attempted to sent a blacklisted file type in {message.channel.mention}.\n> Filename: `{attachment.filename}`\n> URL: {attachment.url}"
+            f"⚠️ User {message.author.mention} (`{message.author.name}`, ID: {message.author.id}) attempted to sent a blacklisted file type in {message.channel.mention}.\n> Filename: `{attachment.filename}`\n> URL: {attachment.url}"
           )
           await message.delete()
 
@@ -312,13 +312,18 @@ async def cmdResetUser(interaction: discord.Interaction, user_id: str):
           user = cur.fetchone()
 
           if user:
+            member = interaction.guild.get_member(
+              discord.Object(id=user_id).id
+            )
+
             cur.execute(
               "UPDATE users SET messages_count = 0 WHERE user_id = %s", (user_id,)
             )
-            await interaction.guild.get_member(
-              discord.Object(id=user_id).id
-            ).remove_roles(config.ACTIVE_ROLE)
+            await member.remove_roles(config.ACTIVE_ROLE)
             await interaction.response.send_message("User has been reset.")
+            await interaction.guild.get_thread(config.LOG_CHANNEL.id).send(
+              f":pencil: User {member.mention} (`{member.name}`, ID: {member.id}) has been reset by moderator (`{interaction.user.name}`, ID: {interaction.user.id})."
+            )
           else:
             await interaction.response.send_message("Requested user not found.")
 

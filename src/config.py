@@ -24,6 +24,5 @@ FIND_A_PROJECT_FORUM_SOLVED_TAG = discord.Object(
 )
 SOLVED_COMMAND = discord.Object(id=getenv("SOLVED_COMMAND"))
 ALERT_CHANNEL = discord.Object(id=getenv("ALERT_CHANNEL"))
-USER_ACTIVATION_CHANNEL = discord.Object(id=getenv("USER_ACTIVATION_CHANNEL"))
 LOG_CHANNEL = discord.Object(id=getenv("LOG_CHANNEL"))
 GUILD = discord.Object(id=getenv("GUILD"))
