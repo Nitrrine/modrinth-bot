@@ -315,9 +315,7 @@ async def cmdResetUser(interaction: discord.Interaction, user_id: str):
           user = cur.fetchone()
 
           if user:
-            member = interaction.guild.get_member(
-              discord.Object(id=user_id).id
-            )
+            member = interaction.guild.get_member(discord.Object(id=user_id).id)
 
             cur.execute(
               "UPDATE users SET messages_count = 0 WHERE user_id = %s", (user_id,)
