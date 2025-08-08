@@ -111,7 +111,6 @@ class Client(commands.Bot):
             ),
           )
 
-          new_entry_id = cur.fetchone()[0]
           conn.commit()
 
       embed = discord.Embed(
@@ -121,9 +120,7 @@ class Client(commands.Bot):
         f"🔔 Don't forget to mark your thread as solved if issue has been resolved by using </solved:{config.SOLVED_COMMAND.id}>",
         color=1825130,
       )
-      embed.set_footer(
-        text=f"🤖 Beep boop, do not reply to this message. Internal Thread ID: {new_entry_id}."
-      )
+      embed.set_footer(text="🤖 Beep boop, do not reply to this message.")
       await thread.send(embed=embed)
 
   async def on_message(self, message: discord.Message):
@@ -255,17 +252,15 @@ client = Client(
 )
 
 
-@client.tree.command(
-  name="info", description="Information about the bot.", guild=config.GUILD
-)
+@client.tree.command(name="info", description="About the bot", guild=config.GUILD)
 async def cmdInfo(interaction: discord.Interaction):
   await interaction.response.send_message(
-    "Hello! I'm Modrinth Bot, my main purpose is [REDACTED]."
+    "Hello! I'm Modrinth Bot, a fully open source utility discord bot for Modrinth."
   )
 
 
 @client.tree.command(
-  name="docs", description="Send a link to a documentation page.", guild=config.GUILD
+  name="docs", description="Send a link to a documentation page", guild=config.GUILD
 )
 async def cmdDocs(interaction: discord.Interaction, path: str):
   await interaction.response.send_message(
@@ -274,7 +269,7 @@ async def cmdDocs(interaction: discord.Interaction, path: str):
 
 
 @client.tree.command(
-  name="github", description="Send a link to a GitHub page.", guild=config.GUILD
+  name="github", description="Send a link to a GitHub page", guild=config.GUILD
 )
 async def cmdGithub(interaction: discord.Interaction, path: str):
   await interaction.response.send_message(
@@ -283,7 +278,7 @@ async def cmdGithub(interaction: discord.Interaction, path: str):
 
 
 @client.tree.command(
-  name="user", description="Get information about a user.", guild=config.GUILD
+  name="user", description="Get information about a user", guild=config.GUILD
 )
 async def cmdUser(interaction: discord.Interaction, user_id: str):
   for role in interaction.user.roles:
@@ -299,11 +294,11 @@ async def cmdUser(interaction: discord.Interaction, user_id: str):
               f"User ID: {user[0]}\nMessage Count: {user[1]}"
             )
           else:
-            await interaction.response.send_message("Requested user not found.")
+            await interaction.response.send_message("❌ Requested user is not found.")
 
 
 @client.tree.command(
-  name="reset", description="Reset user's messages count.", guild=config.GUILD
+  name="reset", description="Reset user's messages count", guild=config.GUILD
 )
 async def cmdResetUser(interaction: discord.Interaction, user_id: str):
   for role in interaction.user.roles:
@@ -326,11 +321,11 @@ async def cmdResetUser(interaction: discord.Interaction, user_id: str):
               f":pencil: User {member.mention} (`{member.name}`, ID: {member.id}) has been reset by moderator (`{interaction.user.name}`, ID: {interaction.user.id})."
             )
           else:
-            await interaction.response.send_message("Requested user not found.")
+            await interaction.response.send_message("❌ Requested user is not found.")
 
 
 @client.tree.command(
-  name="get-open-threads", description="Get all open threads.", guild=config.GUILD
+  name="get-open-threads", description="Get all open threads", guild=config.GUILD
 )
 async def cmdGetOpenThreads(interaction: discord.Interaction):
   with db.get_conn() as conn:
@@ -340,12 +335,12 @@ async def cmdGetOpenThreads(interaction: discord.Interaction):
       open_threads = cur.fetchall()
 
       await interaction.response.send_message(
-        f"There's currently **{len(open_threads)}** open threads."
+        f"There's currently **{len(open_threads)}** open threads"
       )
 
 
 @client.tree.command(
-  name="get-closed-threads", description="Get all closed threads.", guild=config.GUILD
+  name="get-closed-threads", description="Get all closed threads", guild=config.GUILD
 )
 async def cmdGetClosedThreads(interaction: discord.Interaction):
   with db.get_conn() as conn:
@@ -355,12 +350,12 @@ async def cmdGetClosedThreads(interaction: discord.Interaction):
       closed_threads = cur.fetchall()
 
       await interaction.response.send_message(
-        f"There's currently **{len(closed_threads)}** closed threads."
+        f"There's currently **{len(closed_threads)}** closed threads"
       )
 
 
 @client.tree.command(
-  name="get-users-count", description="Get count of all users.", guild=config.GUILD
+  name="get-users-count", description="Get count of all users", guild=config.GUILD
 )
 async def cmdGetUsersCount(interaction: discord.Interaction):
   with db.get_conn() as conn:
@@ -370,19 +365,19 @@ async def cmdGetUsersCount(interaction: discord.Interaction):
       total_users = cur.fetchall()
 
       await interaction.response.send_message(
-        f"There's currently **{len(total_users)}** users in my system."
+        f"There's currently **{len(total_users)}** users in my system"
       )
 
 
 @client.tree.command(
-  name="thread", description="Get information about a thread.", guild=config.GUILD
+  name="thread", description="Get information about a thread", guild=config.GUILD
 )
-async def cmdThread(interaction: discord.Interaction, id: int):
+async def cmdThread(interaction: discord.Interaction, id: str):
   for role in interaction.user.roles:
     if role.id == config.MODERATOR_ROLE.id:
       with db.get_conn() as conn:
         with conn.cursor() as cur:
-          cur.execute(f"SELECT * FROM threads WHERE id = {id}")
+          cur.execute("SELECT * FROM threads WHERE thread_id = %s", (id,))
 
           thread = cur.fetchone()
 
@@ -392,21 +387,21 @@ async def cmdThread(interaction: discord.Interaction, id: int):
               f"**Title:** {thread[1]}\n"
               f"**Description:** {thread[2]}\n"
               f"**Status:** {thread[3]}\n"
-              f"**Discord ID:** `{thread[4]}`\n"
-              f"**Owner ID:** `{thread[5]}`\n"
-              f"-# <:cornerdownright:1361748452991570173> Internal Thread ID: {thread[0]}"
+              f"**Created:** <t:{int(datetime.datetime.fromisoformat(str(thread[4])).timestamp())}>\n"
+              f"**Thread ID:** {thread[5]}\n"
+              f"**Owner ID:** {thread[6]}\n"
             )
           else:
-            await interaction.response.send_message("Requested thread is not found.")
+            await interaction.response.send_message("❌ Requested thread is not found.")
 
 
-@client.tree.command(name="close", description="Close thread.", guild=config.GUILD)
-async def cmdClose(interaction: discord.Interaction, id: int):
+@client.tree.command(name="close", description="Close thread", guild=config.GUILD)
+async def cmdClose(interaction: discord.Interaction, id: str):
   for role in interaction.user.roles:
     if role.id == config.MODERATOR_ROLE.id:
       with db.get_conn() as conn:
         with conn.cursor() as cur:
-          cur.execute("SELECT * FROM threads WHERE id = %s", (id,))
+          cur.execute("SELECT * FROM threads WHERE thread_id = %s", (id,))
 
           thread = cur.fetchone()
           thread_id = thread[5]
@@ -422,12 +417,12 @@ async def cmdClose(interaction: discord.Interaction, id: int):
 
             cur.execute("UPDATE threads SET status = 'closed' WHERE id = %s", (id,))
           else:
-            await interaction.response.send_message("Requested thread is not found.")
+            await interaction.response.send_message("❌ Requested thread is not found.")
 
 
 @client.tree.command(
   name="solved",
-  description="Close current thread and mark it as solved.",
+  description="Mark your thread as solved",
   guild=config.GUILD,
 )
 async def cmdSolved(interaction: discord.Interaction):
@@ -458,6 +453,12 @@ async def cmdSolved(interaction: discord.Interaction):
         )
         await interaction.channel.add_tags(config.FIND_A_PROJECT_FORUM_SOLVED_TAG)
         await interaction.channel.edit(archived=True)
+
+
+async def log(message: str):
+  await (
+    client.get_guild(config.GUILD.id).get_thread(config.LOG_CHANNEL.id).send(message)
+  )
 
 
 client.run(config.BOT_TOKEN)
