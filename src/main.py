@@ -13,6 +13,7 @@ logging.getLogger("discord.http").setLevel(logging.INFO)
 
 
 blacklisted_file_extensions = [
+  "appimage",
   "asp",
   "aspx",
   "aspx-exe",
@@ -23,12 +24,14 @@ blacklisted_file_extensions = [
   "exe-only",
   "exe-service",
   "exe-small",
+  "flatpakref".
   "hta-psh",
   "loop-vbs",
   "macho",
   "msi",
   "msi-nouac",
   "osx-app",
+  "deb",
   "dmg",
   "pkg",
   "jar",
@@ -36,6 +39,7 @@ blacklisted_file_extensions = [
   "psh-net",
   "psh-reflection",
   "psh-cmd",
+  "rpm",
   "vba",
   "vba-exe",
   "vba-psh",
