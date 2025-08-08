@@ -24,7 +24,7 @@ blacklisted_file_extensions = [
   "exe-only",
   "exe-service",
   "exe-small",
-  "flatpakref".
+  "flatpakref",
   "hta-psh",
   "loop-vbs",
   "macho",
