@@ -93,7 +93,7 @@ class Client(commands.Bot):
         if reaction.emoji == "⚠️":
           if re.search(f"<@&{config.MODERATOR_ROLE.id}>", reaction.message.content):
             await reaction.message.reply(
-              "-# <:cornerdownright:1361748452991570173> Please don't ping discord moderators, if you want to report a concern - either use ModMail or a new report feature, [learn more here](https://discord.com/channels/734077874708938864/734084055225597973/1353546687502745673)."
+              "-# <:cornerdownright:1405518734356906014> Please don't ping discord moderators, if you want to report a concern - either use ModMail or a new report feature, [learn more here](https://discord.com/channels/734077874708938864/734084055225597973/1353546687502745673)."
             )
             await reaction.remove(user)
 
@@ -223,7 +223,7 @@ class Client(commands.Bot):
             message.content.lower(),
           ):
             await message.reply(
-              f"-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:{config.SOLVED_COMMAND.id}>"
+              f"-# <:cornerdownright:1405518734356906014> Command suggestion: </solved:{config.SOLVED_COMMAND.id}>"
             )
         if (
           message.channel.parent_id == config.FIND_A_PROJECT_FORUM.id
@@ -235,7 +235,7 @@ class Client(commands.Bot):
             message.content.lower(),
           ):
             await message.reply(
-              f"-# <:cornerdownright:1361748452991570173> Command suggestion: </solved:{config.SOLVED_COMMAND.id}>"
+              f"-# <:cornerdownright:1405518734356906014> Command suggestion: </solved:{config.SOLVED_COMMAND.id}>"
             )
     except AttributeError:
       pass
