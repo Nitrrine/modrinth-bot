@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> Modrinth Bot Python is now deprecated, the TypeScript rewrite is available at [modrinth/discord-bot](https://github.com/modrinth/discord-bot).
+
 # Modrinth Discord Bot
 
 An official utility discord bot for Modrinth.
